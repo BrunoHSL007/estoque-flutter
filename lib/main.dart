@@ -1,20 +1,14 @@
 import 'dart:io';
 
-import 'package:estoque_simples/src/compras.dart';
 import 'package:estoque_simples/src/compras_listagem.dart';
 import 'package:estoque_simples/src/dividas_listagem.dart';
 import 'package:estoque_simples/src/pessoas_cadastro.dart';
-import 'package:estoque_simples/src/produtos_cadastro.dart';
 import 'package:estoque_simples/src/produtos_listagem.dart';
 import 'package:estoque_simples/src/resumo.dart';
-import 'package:estoque_simples/src/subgrupos_cadastro.dart';
 import 'package:estoque_simples/src/vendas_listagem.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-
-//import 'fragment.dart';
-import 'src/grupos_cadastro.dart';
 
 void main() => runApp(MyApp());
 
@@ -27,6 +21,11 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.deepOrange,
       ),
+      // initialRoute: '/',
+      // routes: {
+      //   '/': (context) => MyHomePage(title: 'Estoque Simples'),
+      //   '/produtos_listagem': (context) => ProdutosListagem()
+      // },
       home: MyHomePage(title: 'Estoque Simples'),
     );
   }
@@ -141,126 +140,97 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      appBar: new AppBar(
-        title: new Text(widget.title),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            UserAccountsDrawerHeader(
-              accountName: Text('BrunoHSL007'),
-              accountEmail: Text('brunohenrique.laier28@hotmail.com'),
-              currentAccountPicture: const CircleAvatar(
-                child: FlutterLogo(
-                  size: 42.0,
+    return Resumo();
+  }
+}
+
+class DrawerOnly extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          UserAccountsDrawerHeader(
+            accountName: Text('BrunoHSL007'),
+            accountEmail: Text('brunohenrique.laier28@hotmail.com'),
+            currentAccountPicture: const CircleAvatar(
+              child: FlutterLogo(
+                size: 42.0,
+              ),
+            ),
+          ),
+          ListTile(
+            title: Text('Resumo'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context,
+                  new MaterialPageRoute(builder: (context) => new Resumo()));
+            },
+          ),
+          ListTile(
+            title: Text('Cadastros'),
+          ),
+          Container(
+            padding: EdgeInsets.only(left: 20.0),
+            child: Column(
+              children: [
+                ListTile(
+                  title: Text('Pessoas'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                        context,
+                        new MaterialPageRoute(
+                            builder: (context) => new PessoasCadastro()));
+                  },
                 ),
-              ),
+                ListTile(
+                  title: Text('Produtos'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                        context,
+                        new MaterialPageRoute(
+                            builder: (context) =>
+                                new ProdutosListagem())); //ProdutosCadastro(29); // 0 significa cadastrar novo produto
+                  },
+                ),
+              ],
             ),
-            ListTile(
-              title: Text('Resumo'),
-              selected: 0 == _selectedIndex,
-              onTap: () {
-                _onSelectItem(0);
-              },
-            ),
-            ListTile(
-              title: Text('Cadastros'),
-            ),
-            Container(
-              padding: EdgeInsets.only(left: 20.0),
-              child: Column(
-                children: [
-                  ListTile(
-                    title: Text('Pessoas'),
-                    selected: 1 == _selectedIndex,
-                    onTap: () {
-                      _onSelectItem(1);
-                    },
-                  ),
-                  ListTile(
-                    title: Text('Produtos'),
-                    selected: 2 == _selectedIndex,
-                    onTap: () {
-                      _onSelectItem(2);
-                    },
-                  ),
-                  // ListTile(
-                  //   title: Text('Grupos'),
-                  //   selected: 3 == _selectedIndex,
-                  //   onTap: () {
-                  //     _onSelectItem(3);
-                  //   },
-                  // ),
-                  // ListTile(
-                  //   title: Text('SubGrupos'),
-                  //   selected: 4 == _selectedIndex,
-                  //   onTap: () {
-                  //     _onSelectItem(4);
-                  //   },
-                  // ),
-                ],
-              ),
-            ),
-            ListTile(
-              title: Text('Vendas'),
-              selected: 5 == _selectedIndex,
-              onTap: () {
-                _onSelectItem(5);
-              },
-            ),
-            ListTile(
-              title: Text('Compras'),
-              selected: 6 == _selectedIndex,
-              onTap: () {
-                _onSelectItem(8);
-              },
-            ),
-            ListTile(
-              title: Text('Dívidas'),
-              selected: 7 == _selectedIndex,
-              onTap: () {
-                _onSelectItem(7);
-              },
-            ),
-          ],
-        ),
+          ),
+          ListTile(
+            title: Text('Vendas'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                  context,
+                  new MaterialPageRoute(
+                      builder: (context) => new VendasListagem()));
+            },
+          ),
+          ListTile(
+            title: Text('Compras'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                  context,
+                  new MaterialPageRoute(
+                      builder: (context) => new ComprasListagem()));
+            },
+          ),
+          ListTile(
+            title: Text('Dívidas'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                  context,
+                  new MaterialPageRoute(
+                      builder: (context) => new DividasListagem()));
+            },
+          ),
+        ],
       ),
-      body: _getDrawerItem(_selectedIndex),
-      //floatingActionButton: FloatingActionButton(
-      //  child: Icon(Icons.add_circle),
-      //  onPressed: _onSelectItem(8),
-      //),
     );
-  }
-
-  _getDrawerItem(int pos) {
-    switch (pos) {
-      case 0:
-        return Resumo();
-      case 1:
-        return PessoasCadastro();
-      case 2:
-        return ProdutosListagem(); //ProdutosCadastro(29); // 0 significa cadastrar novo produto
-      case 3:
-        return GruposCadastro();
-      case 4:
-        return SubGruposCadastro();
-      case 5:
-        return VendasListagem();
-      case 6:
-        return ComprasListagem();
-      case 7:
-        return DividasListagem();
-      case 8:
-        return Compras();
-    }
-  }
-
-  _onSelectItem(int index) {
-    setState(() => _selectedIndex = index);
-    Navigator.of(context).pop();
   }
 }
