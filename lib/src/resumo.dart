@@ -1,3 +1,4 @@
+import 'package:estoque_simples/src/vendas_cadastro.dart';
 import 'package:flutter/material.dart';
 import 'package:estoque_simples/main.dart';
 
@@ -10,6 +11,15 @@ class Resumo extends StatelessWidget {
           title: const Text('Estoque Simples'),
         ),
         drawer: DrawerOnly(),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+                context,
+                new MaterialPageRoute(
+                    builder: (context) => new VendasCadastro(0)));
+          },
+          child: const Icon(Icons.add_shopping_cart),
+        ),
         body: Center(
           child: ListView(children: [
             // Card Dividas

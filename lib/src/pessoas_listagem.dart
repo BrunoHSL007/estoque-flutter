@@ -1,20 +1,20 @@
 import 'dart:io';
 
-import 'package:estoque_simples/src/produtos_cadastro.dart';
+import 'package:estoque_simples/src/pessoas_cadastro.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:estoque_simples/main.dart';
 
-class ProdutosListagem extends StatefulWidget {
+class PessoasListagem extends StatefulWidget {
   @override
-  _ProdutosListagemState createState() => _ProdutosListagemState();
+  _PessoasListagemState createState() => _PessoasListagemState();
 }
 
-class _ProdutosListagemState extends State<ProdutosListagem> {
-  var listaProdutos = new List<Map>();
+class _PessoasListagemState extends State<PessoasListagem> {
+  var listaPessoas = new List<Map>();
 
-  _ProdutosListagemState() {
+  _PessoasListagemState() {
     consultaBanco();
   }
 
@@ -25,17 +25,18 @@ class _ProdutosListagemState extends State<ProdutosListagem> {
     // Abertura da conexão
     var database = await openDatabase(path, version: 2);
 
-    var lista = await database.rawQuery(
-        'SELECT produtos.codigo,produtos.descricao,produtos.obs,coalesce(sum(quantidade),0) as quantidade from produtos inner join movimento on produtos.codigo = movimento.produto group by produtos.codigo,produtos.descricao,produtos.obs');
+    var lista = await database.rawQuery('SELECT * from pessoas');
     for (var item in lista) {
       setState(() {
         Map dados = {
           'codigo': item['codigo'],
-          'descricao': item['descricao'],
-          'obs': item['obs'],
-          'quantidade': item['quantidade']
+          'nome': item['nome'],
+          'telefone': item['telefone'],
+          'endereco': item['endereco'],
+          'nascimento': item['nascimento'],
+          'divida': item['divida']
         };
-        this.listaProdutos.add(dados);
+        this.listaPessoas.add(dados);
       });
     }
     await database.close();
@@ -46,7 +47,7 @@ class _ProdutosListagemState extends State<ProdutosListagem> {
     return Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: new AppBar(
-          title: const Text('Produtos'),
+          title: const Text('Pessoas'),
         ),
         drawer: DrawerOnly(),
         body: Card(
@@ -62,7 +63,7 @@ class _ProdutosListagemState extends State<ProdutosListagem> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "Estoque",
+                        "Cadastro",
                         style: TextStyle(
                             fontSize: 18.0, fontWeight: FontWeight.w400),
                       ),
@@ -73,7 +74,7 @@ class _ProdutosListagemState extends State<ProdutosListagem> {
                                 context,
                                 new MaterialPageRoute(
                                     builder: (context) =>
-                                        new ProdutosCadastro(0)));
+                                        new PessoasCadastro(0, true)));
                           })
                     ],
                   ),
@@ -97,7 +98,7 @@ class _ProdutosListagemState extends State<ProdutosListagem> {
                         ),
                         Container(
                           child: Text(
-                            'Descrição',
+                            'Nome',
                             style: TextStyle(fontWeight: FontWeight.w500),
                           ),
                           padding: const EdgeInsets.all(0.0),
@@ -107,7 +108,7 @@ class _ProdutosListagemState extends State<ProdutosListagem> {
                         ),
                         Container(
                           child: Text(
-                            'Qtd.',
+                            'Dívida',
                             style: TextStyle(fontWeight: FontWeight.w500),
                           ),
                           padding: const EdgeInsets.all(0.0),
@@ -117,7 +118,7 @@ class _ProdutosListagemState extends State<ProdutosListagem> {
                         ),
                       ]),
                   ListView.builder(
-                      itemCount: this.listaProdutos.length,
+                      itemCount: this.listaPessoas.length,
                       shrinkWrap: true,
                       itemBuilder: (context, index) {
                         return FlatButton(
@@ -126,10 +127,9 @@ class _ProdutosListagemState extends State<ProdutosListagem> {
                               Navigator.push(
                                   context,
                                   new MaterialPageRoute(
-                                      builder: (context) =>
-                                          new ProdutosCadastro(
-                                              this.listaProdutos[index]
-                                                  ['codigo'])));
+                                      builder: (context) => new PessoasCadastro(
+                                          this.listaPessoas[index]['codigo'],
+                                          true)));
                             },
                             child: Row(
                                 mainAxisAlignment:
@@ -137,7 +137,7 @@ class _ProdutosListagemState extends State<ProdutosListagem> {
                                 children: <Widget>[
                                   Container(
                                     child: Text(
-                                        '${this.listaProdutos[index]['codigo']}'),
+                                        '${this.listaPessoas[index]['codigo']}'),
                                     padding: const EdgeInsets.all(0.0),
                                     alignment: Alignment.centerLeft,
                                     //width: 60.0,
@@ -145,7 +145,7 @@ class _ProdutosListagemState extends State<ProdutosListagem> {
                                   ),
                                   Container(
                                     child: Text(
-                                        '${this.listaProdutos[index]['descricao']}'),
+                                        '${this.listaPessoas[index]['nome']}'),
                                     padding: const EdgeInsets.all(0.0),
                                     alignment: Alignment.centerLeft,
                                     //width: 260.0,
@@ -153,7 +153,7 @@ class _ProdutosListagemState extends State<ProdutosListagem> {
                                   ),
                                   Container(
                                     child: Text(
-                                        '${this.listaProdutos[index]['quantidade']}'),
+                                        '${this.listaPessoas[index]['divida']}'),
                                     padding: const EdgeInsets.all(0.0),
                                     alignment: Alignment.centerRight,
                                     //width: 50.0,

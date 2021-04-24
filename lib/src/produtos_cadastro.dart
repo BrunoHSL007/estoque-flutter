@@ -20,6 +20,7 @@ class _ProdutosCadastroState extends State<ProdutosCadastro> {
   var codigoProduto = 0;
   var descricao = '';
   var obs = '';
+  var preco = '';
   bool update = false;
   var qtdOriginal = 0;
   var quantidade = '';
@@ -41,7 +42,7 @@ class _ProdutosCadastroState extends State<ProdutosCadastro> {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String path = documentsDirectory.path + "/estoque.db";
     // Abertura da conexão
-    var database = await openDatabase(path, version: 1);
+    var database = await openDatabase(path, version: 2);
     var retorno = await database.query(
       "produtos",
       columns: ["coalesce(max(codigo),0) as codigo"],
@@ -61,7 +62,7 @@ class _ProdutosCadastroState extends State<ProdutosCadastro> {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String path = documentsDirectory.path + "/estoque.db";
     // Abertura da conexão
-    var database = await openDatabase(path, version: 1);
+    var database = await openDatabase(path, version: 2);
 
     // DELETE
     // await database.rawDelete("DELETE FROM pessoas where codigo=?", [1]);
@@ -69,6 +70,7 @@ class _ProdutosCadastroState extends State<ProdutosCadastro> {
         columns: [
           "codigo",
           "descricao",
+          "preco",
           "obs",
         ],
         where: "codigo=?",
@@ -78,6 +80,7 @@ class _ProdutosCadastroState extends State<ProdutosCadastro> {
       setState(() {
         this.codigoProduto = item['codigo'];
         this.descricao = item['descricao'];
+        this.preco = item['preco'].toString();
         this.obs = item['obs'];
       });
     }
@@ -100,22 +103,22 @@ class _ProdutosCadastroState extends State<ProdutosCadastro> {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String path = documentsDirectory.path + "/estoque.db";
     // Abertura da conexão
-    var database = await openDatabase(path, version: 1);
+    var database = await openDatabase(path, version: 2);
 
     if (this.update) {
       await database.rawUpdate(
-          "UPDATE produtos SET descricao = ?, obs=? where codigo = ?",
-          [descricao, obs, codigoProduto]);
+          "UPDATE produtos SET descricao = ?, obs=?, preco=? where codigo = ?",
+          [descricao, obs, preco, codigoProduto]);
     } else {
       await database.rawInsert(
-          "INSERT INTO produtos(codigo, descricao,obs) VALUES(?,?,?)",
-          [codigoProduto, descricao, obs]);
+          "INSERT INTO produtos(codigo, descricao,obs,preco) VALUES(?,?,?,?)",
+          [codigoProduto, descricao, obs, preco]);
     }
     var aux = int.parse(this.quantidade);
     aux = aux - this.qtdOriginal;
     await database.rawInsert(
-        "INSERT INTO movimento(auxiliar,produto,quantidade) VALUES(?,?,?)",
-        ["MV", codigoProduto, aux]);
+        "INSERT INTO movimento(auxiliar,produto,quantidade,valor) VALUES(?,?,?,?)",
+        ["MV", codigoProduto, aux, preco * aux]);
     //await database.rawDelete('delete from movimento');
     //await database.rawDelete('delete from produtos');
     await database.close();
@@ -130,7 +133,7 @@ class _ProdutosCadastroState extends State<ProdutosCadastro> {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String path = documentsDirectory.path + "/estoque.db";
     // Abertura da conexãocodigo
-    var database = await openDatabase(path, version: 1);
+    var database = await openDatabase(path, version: 2);
 
     if (this.update) {
       await database.rawDelete(
@@ -182,14 +185,14 @@ class _ProdutosCadastroState extends State<ProdutosCadastro> {
                     width: 1.7976931348623157e+308,
                     height: 10.0,
                   ),
-                  Text(
-                    "Descrição",
-                  ),
                   TextFormField(
                     controller: TextEditingController(text: descricao),
                     onChanged: (value) {
                       descricao = value;
                     },
+                    decoration: InputDecoration(
+                      labelText: "Descrição",
+                    ),
                   ),
                   Container(
                     padding: const EdgeInsets.all(0.0),
@@ -223,6 +226,7 @@ class _ProdutosCadastroState extends State<ProdutosCadastro> {
                         Container(
                           width: 40,
                           child: TextFormField(
+                            textAlign: TextAlign.center,
                             controller: TextEditingController(text: quantidade),
                             onChanged: (value) {
                               quantidade = value;
@@ -249,14 +253,29 @@ class _ProdutosCadastroState extends State<ProdutosCadastro> {
                     width: 1.7976931348623157e+308,
                     height: 5.0,
                   ),
-                  Text(
-                    "Obs",
+                  TextField(
+                    controller: TextEditingController(text: preco),
+                    keyboardType:
+                        TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+\.?\d{0,2}')),
+                    ],
+                    onChanged: (value) {
+                      preco = value;
+                    },
+                    decoration: InputDecoration(
+                      labelText: "Preço",
+                    ),
                   ),
                   TextField(
                     controller: TextEditingController(text: obs),
                     onChanged: (value) {
                       obs = value;
                     },
+                    decoration: InputDecoration(
+                      labelText: "Observação",
+                    ),
                   ),
                   Container(
                     padding: const EdgeInsets.all(0.0),

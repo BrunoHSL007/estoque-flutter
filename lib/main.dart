@@ -2,13 +2,14 @@ import 'dart:io';
 
 import 'package:estoque_simples/src/compras_listagem.dart';
 import 'package:estoque_simples/src/dividas_listagem.dart';
-import 'package:estoque_simples/src/pessoas_cadastro.dart';
+import 'package:estoque_simples/src/pessoas_listagem.dart';
 import 'package:estoque_simples/src/produtos_listagem.dart';
 import 'package:estoque_simples/src/resumo.dart';
 import 'package:estoque_simples/src/vendas_listagem.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() => runApp(MyApp());
 
@@ -16,6 +17,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate
+      ],
+      supportedLocales: [const Locale('pt', 'BR')],
       debugShowCheckedModeBanner: false,
       title: 'Estoque Simples',
       theme: ThemeData(
@@ -41,10 +47,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _selectedIndex = 0;
-
   // Video aula do banco de dados: https://www.youtube.com/watch?v=C_nVmqQRjdk
   // Cria arquivo de banco de dados no dispositivo e cria tabelas dentro do arquivo
+  String _lista = "";
   void iniciaBanco() async {
     //Pegar path (caminho do arquivo do banco de dados local)
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
@@ -52,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // Abertura da conexão
     var database = await openDatabase(path,
-        version: 1, onUpgrade: (Database db, int version, int info) async {},
+        version: 2, onUpgrade: (Database db, int version, int info) async {},
         onCreate: (Database db, int version) async {
       // TABELA PESSOAS
       await db.execute("CREATE TABLE pessoas(" +
@@ -93,15 +98,16 @@ class _MyHomePageState extends State<MyHomePage> {
           "  es TEXT," +
           "  produto INTEGER," +
           "  valor REAL," +
-          "  quantidade INTEGER," +
-          "  pago BOOLEAN" +
-          ");");
+          "  quantidade INTEGER,"
+              ");");
 
       // TABELA VENDA
       await db.execute("CREATE TABLE vendacompra(" +
           "  codigo INTEGER PRIMARY KEY AUTOINCREMENT," +
           "  tipo TEXT," +
           "  pessoa INTEGER," +
+          "  total REAL," +
+          "  pago REAL," +
           "  data DATE		" +
           ");");
     });
@@ -135,8 +141,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
     await database.close();
   }
-
-  String _lista = "";
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +186,8 @@ class DrawerOnly extends StatelessWidget {
                     Navigator.push(
                         context,
                         new MaterialPageRoute(
-                            builder: (context) => new PessoasCadastro()));
+                            builder: (context) =>
+                                new PessoasListagem())); //PessoasCadastro()
                   },
                 ),
                 ListTile(
