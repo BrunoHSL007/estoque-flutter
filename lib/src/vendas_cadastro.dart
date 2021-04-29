@@ -2,6 +2,8 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:estoque_simples/src/pessoas_cadastro.dart';
+import 'package:estoque_simples/src/produtos_cadastro.dart';
+import 'package:estoque_simples/src/produtos_listagem.dart';
 import 'package:flutter/material.dart';
 import 'package:estoque_simples/main.dart';
 import 'package:dropdown_search/dropdown_search.dart';
@@ -20,6 +22,7 @@ class VendasCadastro extends StatefulWidget {
 
 class _VendasCadastroState extends State<VendasCadastro> {
   var codigoVenda = 0;
+  var codigoMovimento = 0;
   var qtdOriginal = 1;
   var quantidade = '';
 
@@ -83,14 +86,23 @@ class _VendasCadastroState extends State<VendasCadastro> {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String path = documentsDirectory.path + "/estoque.db";
     // Abertura da conexão
-    var database = await openDatabase(path, version: 2);
-    var retorno = await database.query(
+    var database = await openDatabase(path, version: 1);
+    var retornoVendaCompra = await database.query(
       "vendacompra",
       columns: ["coalesce(max(codigo),0) as codigo"],
     );
-    for (var item in retorno) {
+    var retornoMovimento = await database.query(
+      "movimento",
+      columns: ["coalesce(max(codigo),0) as codigo"],
+    );
+    for (var item in retornoVendaCompra) {
       setState(() {
         this.codigoVenda = item['codigo'] + 1;
+      });
+    }
+    for (var item in retornoMovimento) {
+      setState(() {
+        this.codigoMovimento = item['codigo'] + 1;
       });
     }
     this.qtdOriginal = 1;
@@ -108,12 +120,14 @@ class _VendasCadastroState extends State<VendasCadastro> {
 
       listaPessoas = [];
       listaProdutos = [];
+      mapProdutos = new List<Map>();
 
       // Busca Produtos
       var itlista = await database.rawQuery(
           'select produtos.*,coalesce(sum(quantidade),0) as quantidade from produtos ' +
               'inner join movimento on produtos.codigo = movimento.produto ' +
               'group by produtos.codigo');
+      print('consulta no banco');
       for (var item in itlista) {
         setState(() {
           this
@@ -274,16 +288,40 @@ class _VendasCadastroState extends State<VendasCadastro> {
         // Update
       } else {
         // Insert cabeçalho da Venda
+        print('---------------------------');
+        var codigoPessoa =
+            pessoaSelecionada.substring(0, pessoaSelecionada.indexOf(' - '));
+
         await database.rawInsert(
             "INSERT INTO vendacompra(codigo,tipo,pessoa,total,pago,data) VALUES(?,?,?,?,?,?)",
             [
-              this.codigoVenda,
-              this.tipoPagamento,
-              this.pessoaSelecionada,
-              this.totalVenda,
-              this.totalPago,
-              this.data
+              codigoVenda,
+              tipoPagamento,
+              codigoPessoa,
+              totalVenda,
+              totalPago,
+              dataEntrega
             ]);
+
+        for (var item in mapItensSelecionados) {
+          await database.rawInsert(
+              "INSERT INTO movimento(codigo,auxiliar,es,produto,valor,quantidade) VALUES(?,?,?,?,?,?)",
+              [
+                codigoMovimento,
+                codigoVenda,
+                'VE',
+                item["codigo"],
+                item["total"],
+                item["quantidade"] * -1
+              ]);
+          this.codigoMovimento++;
+        }
+        print('---------------------------');
+        var listaVendaCompra =
+            await database.rawQuery("select * from vendacompra");
+        var listaMovimento = await database.rawQuery("select * from movimento");
+        print(listaMovimento);
+        print(listaVendaCompra);
 
         // Insert movimentação
         //Inserir movimentação dos produtos
@@ -292,6 +330,7 @@ class _VendasCadastroState extends State<VendasCadastro> {
       var teste = await database.query('vendacompra');
       print(teste);
       database.close();
+      Navigator.pop(context);
     } catch (ex) {
       print(ex);
     }
@@ -352,21 +391,20 @@ class _VendasCadastroState extends State<VendasCadastro> {
                       height: 10.0,
                     ),
                     DropdownSearch<String>(
-                      //searchBoxController: TextEditingController(text: "Teste"),
-                      // dropdownSearchDecoration: InputDecoration(
-                      //     border: UnderlineInputBorder(
-                      //   borderSide: BorderSide(color: Color(0xFF01689A)),
-                      // )),
                       mode: Mode.DIALOG,
                       isFilteredOnline: true,
                       showClearButton: true,
                       showSearchBox: true,
                       showSelectedItem: true,
-                      selectedItem: this.pessoaSelecionada,
+                      selectedItem: pessoaSelecionada,
                       items: this.listaPessoas,
                       label: "Cliente",
                       popupItemDisabled: (String s) => s.startsWith('I'),
-                      onChanged: print,
+                      onChanged: (value) {
+                        setState(() {
+                          pessoaSelecionada = value;
+                        });
+                      },
                     ),
                     Container(
                       padding: const EdgeInsets.all(0.0),
@@ -425,12 +463,26 @@ class _VendasCadastroState extends State<VendasCadastro> {
                   mainAxisSize: MainAxisSize.max,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      height: 30,
-                      child: Text(
-                        "Itens",
-                        style: TextStyle(fontSize: 18),
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          child: Text(
+                            "Itens",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        ),
+                        IconButton(
+                            icon: const Icon(Icons.add),
+                            onPressed: () async {
+                              await Navigator.push(
+                                  context,
+                                  new MaterialPageRoute(
+                                      builder: (context) =>
+                                          new ProdutosListagem()));
+                              consultaBanco();
+                            })
+                      ],
                     ),
                     DropdownSearch<String>(
                       //searchBoxController: TextEditingController(text: "Teste"),
@@ -819,7 +871,7 @@ class _VendasCadastroState extends State<VendasCadastro> {
                     textColor: Colors.white,
                     onPressed: () {
                       //fazer funcao para inserir no banco
-                      //insereBanco();
+                      insereBanco();
                     },
                     child: Container(
                         alignment: Alignment.center,

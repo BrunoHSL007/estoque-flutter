@@ -42,7 +42,7 @@ class _ProdutosCadastroState extends State<ProdutosCadastro> {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String path = documentsDirectory.path + "/estoque.db";
     // Abertura da conexão
-    var database = await openDatabase(path, version: 2);
+    var database = await openDatabase(path, version: 1);
     var retorno = await database.query(
       "produtos",
       columns: ["coalesce(max(codigo),0) as codigo"],
@@ -119,8 +119,6 @@ class _ProdutosCadastroState extends State<ProdutosCadastro> {
     await database.rawInsert(
         "INSERT INTO movimento(auxiliar,produto,quantidade,valor) VALUES(?,?,?,?)",
         ["MV", codigoProduto, aux, preco * aux]);
-    //await database.rawDelete('delete from movimento');
-    //await database.rawDelete('delete from produtos');
     await database.close();
     Navigator.pop(context);
     Navigator.pop(context);

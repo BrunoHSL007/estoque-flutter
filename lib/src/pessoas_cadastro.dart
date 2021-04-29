@@ -47,7 +47,7 @@ class _PessoasCadastroState extends State<PessoasCadastro> {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String path = documentsDirectory.path + "/estoque.db";
     // Abertura da conexão
-    var database = await openDatabase(path, version: 2);
+    var database = await openDatabase(path, version: 1);
     var retorno = await database.query(
       "pessoas",
       columns: ["coalesce(max(codigo),0) as codigo"],

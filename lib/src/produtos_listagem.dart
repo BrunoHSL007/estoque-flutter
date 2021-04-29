@@ -23,7 +23,7 @@ class _ProdutosListagemState extends State<ProdutosListagem> {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String path = documentsDirectory.path + "/estoque.db";
     // Abertura da conexão
-    var database = await openDatabase(path, version: 2);
+    var database = await openDatabase(path, version: 1);
 
     var lista = await database.rawQuery(
         'SELECT produtos.codigo,produtos.descricao,produtos.obs,coalesce(sum(quantidade),0) as quantidade from produtos inner join movimento on produtos.codigo = movimento.produto group by produtos.codigo,produtos.descricao,produtos.obs');

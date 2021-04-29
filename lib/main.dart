@@ -57,7 +57,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // Abertura da conexão
     var database = await openDatabase(path,
-        version: 2, onUpgrade: (Database db, int version, int info) async {},
+        version: 1, onUpgrade: (Database db, int version, int info) async {},
         onCreate: (Database db, int version) async {
       // TABELA PESSOAS
       await db.execute("CREATE TABLE pessoas(" +
@@ -101,6 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
           "  quantidade INTEGER,"
               ");");
 
+      print('Iniciando banco...');
       // TABELA VENDA
       await db.execute("CREATE TABLE vendacompra(" +
           "  codigo INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -110,6 +111,7 @@ class _MyHomePageState extends State<MyHomePage> {
           "  pago REAL," +
           "  data DATE		" +
           ");");
+      print('Iniciando banco...');
     });
 
     // INSERT
@@ -118,32 +120,33 @@ class _MyHomePageState extends State<MyHomePage> {
     //    ["Bruno", "(45) 9 9999-9999", "Rua Teste, 123", "1998-01-28"]);
 
     // UPDATE
-    await database.rawUpdate(
-        "UPDATE pessoas set nome = ?, nascimento=? where codigo=?",
-        ["ELIANE", "1975-02-16", 2]);
+    // await database.rawUpdate(
+    //     "UPDATE pessoas set nome = ?, nascimento=? where codigo=?",
+    //     ["ELIANE", "1975-02-16", 2]);
 
     // DELETE
-    await database.rawDelete("DELETE FROM pessoas where codigo=?", [1]);
-    var lista = await database.query("pessoas", columns: [
-      "codigo",
-      "nome",
-      "telefone",
-      "endereco",
-      "nascimento",
-      "divida"
-    ]);
-    print(lista);
-    for (var item in lista) {
-      setState(() {
-        _lista += item['nome'] + '\n';
-      });
-    }
+    // await database.rawDelete("DELETE FROM pessoas where codigo=?", [1]);
+    // var lista = await database.query("pessoas", columns: [
+    //   "codigo",
+    //   "nome",
+    //   "telefone",
+    //   "endereco",
+    //   "nascimento",
+    //   "divida"
+    // ]);
+    // print(lista);
+    // for (var item in lista) {
+    //   setState(() {
+    //     _lista += item['nome'] + '\n';
+    //   });
+    // }
 
     await database.close();
   }
 
   @override
   Widget build(BuildContext context) {
+    iniciaBanco();
     return Resumo();
   }
 }
