@@ -2,8 +2,8 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:estoque_simples/src/pessoas_cadastro.dart';
-import 'package:estoque_simples/src/produtos_cadastro.dart';
 import 'package:estoque_simples/src/produtos_listagem.dart';
+import 'package:estoque_simples/src/vendas_listagem.dart';
 import 'package:flutter/material.dart';
 import 'package:estoque_simples/main.dart';
 import 'package:dropdown_search/dropdown_search.dart';
@@ -69,10 +69,13 @@ class _VendasCadastroState extends State<VendasCadastro> {
   _VendasCadastroState(int idVenda) {
     this.codigoVenda = idVenda;
     this.itemSelecionado = null;
+    this.qtdOriginal = 1;
+    this.quantidade = this.qtdOriginal.toString();
     if (this.codigoVenda != 0) {
       // Alteração de produtos
       this.update = true;
       consultaBanco();
+      carregaCampos();
     } else {
       // Cadastro de um produto novo
       proximoCodigo();
@@ -86,28 +89,76 @@ class _VendasCadastroState extends State<VendasCadastro> {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String path = documentsDirectory.path + "/estoque.db";
     // Abertura da conexão
-    var database = await openDatabase(path, version: 1);
-    var retornoVendaCompra = await database.query(
-      "vendacompra",
-      columns: ["coalesce(max(codigo),0) as codigo"],
-    );
-    var retornoMovimento = await database.query(
+    if (!update) {
+      var dbVendaCompra = await openDatabase(path, version: 1);
+      var retornoVendaCompra = await dbVendaCompra.query(
+        "vendacompra",
+        columns: ["coalesce(max(codigo),0) as codigo"],
+      );
+      await dbVendaCompra.close();
+      for (var item in retornoVendaCompra) {
+        setState(() {
+          this.codigoVenda = item['codigo'] + 1;
+        });
+      }
+    }
+
+    var dbMovimento = await openDatabase(path, version: 1);
+    var retornoMovimento = await dbMovimento.query(
       "movimento",
       columns: ["coalesce(max(codigo),0) as codigo"],
     );
-    for (var item in retornoVendaCompra) {
-      setState(() {
-        this.codigoVenda = item['codigo'] + 1;
-      });
-    }
+    await dbMovimento.close();
+
     for (var item in retornoMovimento) {
       setState(() {
         this.codigoMovimento = item['codigo'] + 1;
       });
     }
-    this.qtdOriginal = 1;
-    this.quantidade = this.qtdOriginal.toString();
-    await database.close();
+  }
+
+  void carregaCampos() async {
+    Directory documentsDirectory = await getApplicationDocumentsDirectory();
+    String path = documentsDirectory.path + "/estoque.db";
+    var dbVenda = await openDatabase(path, version: 2);
+    var dadosLista = await dbVenda.rawQuery(
+        'select vendaCompra.*,pessoas.nome from vendaCompra' +
+            ' inner join pessoas on vendaCompra.pessoa = pessoas.codigo ' +
+            ' where vendaCompra.codigo=?',
+        [this.codigoVenda]);
+    await dbVenda.close();
+    for (var item in dadosLista) {
+      setState(() {
+        this.pessoaSelecionada =
+            item['pessoa'].toString() + ' - ' + item['nome'];
+        this.dataEntrega = item['data'];
+        this.totalVenda = item['total'];
+        this.totalQtd = item['quantidade'];
+        this.totalPago = item['pago'];
+      });
+    }
+    var dbProdutos = await openDatabase(path, version: 2);
+    var itlista = await dbProdutos.rawQuery(
+        'select produtos.*,coalesce(sum(movimento.quantidade),0) as quantidade' +
+            ' from movimento ' +
+            ' inner join produtos on produtos.codigo = movimento.produto ' +
+            ' where movimento.auxiliar=?' +
+            ' group by produtos.codigo',
+        [this.codigoVenda]);
+    await dbProdutos.close();
+    print(itlista);
+    for (var item in itlista) {
+      setState(() {
+        Map dados = {
+          'codigo': item['codigo'],
+          'descricao': item['descricao'],
+          'unitario': item['preco'],
+          'total': item['preco'] * item['quantidade'] * -1,
+          'quantidade': item['quantidade'] * -1
+        };
+        this.mapItensSelecionados.add(dados);
+      });
+    }
   }
 
   void consultaBanco() async {
@@ -115,6 +166,7 @@ class _VendasCadastroState extends State<VendasCadastro> {
     try {
       Directory documentsDirectory = await getApplicationDocumentsDirectory();
       String path = documentsDirectory.path + "/estoque.db";
+
       // Abertura da conexão
       var database = await openDatabase(path, version: 2);
 
@@ -127,7 +179,6 @@ class _VendasCadastroState extends State<VendasCadastro> {
           'select produtos.*,coalesce(sum(quantidade),0) as quantidade from produtos ' +
               'inner join movimento on produtos.codigo = movimento.produto ' +
               'group by produtos.codigo');
-      print('consulta no banco');
       for (var item in itlista) {
         setState(() {
           this
@@ -146,12 +197,13 @@ class _VendasCadastroState extends State<VendasCadastro> {
         });
       }
 
-      database.close();
+      await database.close();
 
       // Busca clientes
-      var dba = await openDatabase(path, version: 2);
+      var dbPessoas = await openDatabase(path, version: 2);
 
-      var peslista = await dba.rawQuery('SELECT * from pessoas');
+      var peslista = await dbPessoas.rawQuery('SELECT * from pessoas');
+      await dbPessoas.close();
 
       for (var item in peslista) {
         setState(() {
@@ -160,7 +212,6 @@ class _VendasCadastroState extends State<VendasCadastro> {
               .add(item['codigo'].toString() + ' - ' + item['nome']);
         });
       }
-      await dba.close();
     } catch (ex) {
       print(ex);
     }
@@ -286,20 +337,53 @@ class _VendasCadastroState extends State<VendasCadastro> {
 
       if (this.update) {
         // Update
+        var codigoPessoa =
+            pessoaSelecionada.substring(0, pessoaSelecionada.indexOf(' - '));
+        await database.rawInsert(
+            "UPDATE vendaCompra SET tipo=?,pessoa=?,total=?,pago=?,quantidade=?,data=? WHERE codigo=?",
+            [
+              tipoPagamento,
+              codigoPessoa,
+              totalVenda,
+              totalPago,
+              totalQtd,
+              dataEntrega,
+              codigoVenda
+            ]);
+        await database.rawDelete(
+            "DELETE FROM movimento Where auxiliar = ?", [codigoVenda]);
+        for (var item in mapItensSelecionados) {
+          await database.rawInsert(
+              "INSERT INTO movimento(codigo,auxiliar,es,produto,valor,quantidade) VALUES(?,?,?,?,?,?)",
+              [
+                codigoMovimento,
+                codigoVenda,
+                'VE',
+                item["codigo"],
+                item["total"],
+                item["quantidade"] * -1
+              ]);
+          this.codigoMovimento++;
+        }
+        database.close();
+        Navigator.pop(context);
+        Navigator.pop(context);
+        Navigator.push(context,
+            new MaterialPageRoute(builder: (context) => new VendasListagem()));
       } else {
         // Insert cabeçalho da Venda
-        print('---------------------------');
         var codigoPessoa =
             pessoaSelecionada.substring(0, pessoaSelecionada.indexOf(' - '));
 
         await database.rawInsert(
-            "INSERT INTO vendacompra(codigo,tipo,pessoa,total,pago,data) VALUES(?,?,?,?,?,?)",
+            "INSERT INTO vendacompra(codigo,tipo,pessoa,total,pago,quantidade,data) VALUES(?,?,?,?,?,?,?)",
             [
               codigoVenda,
               tipoPagamento,
               codigoPessoa,
               totalVenda,
               totalPago,
+              totalQtd,
               dataEntrega
             ]);
 
@@ -316,24 +400,34 @@ class _VendasCadastroState extends State<VendasCadastro> {
               ]);
           this.codigoMovimento++;
         }
-        print('---------------------------');
-        var listaVendaCompra =
-            await database.rawQuery("select * from vendacompra");
-        var listaMovimento = await database.rawQuery("select * from movimento");
-        print(listaMovimento);
-        print(listaVendaCompra);
-
         // Insert movimentação
         //Inserir movimentação dos produtos
-
+        database.close();
+        Navigator.pop(context);
       }
-      var teste = await database.query('vendacompra');
-      print(teste);
-      database.close();
-      Navigator.pop(context);
     } catch (ex) {
       print(ex);
     }
+  }
+
+  void deletaVenda() async {
+    //Pegar path (caminho do arquivo do banco de dados local)
+    Directory documentsDirectory = await getApplicationDocumentsDirectory();
+    String path = documentsDirectory.path + "/estoque.db";
+    // Abertura da conexãocodigo
+    var database = await openDatabase(path, version: 2);
+
+    if (this.update) {
+      await database.rawDelete(
+          'DELETE FROM vendaCompra WHERE codigo = ?', [this.codigoVenda]);
+      await database.rawDelete(
+          'DELETE FROM movimento WHERE auxiliar = ?', [this.codigoVenda]);
+    }
+    await database.close();
+    Navigator.pop(context);
+    Navigator.pop(context);
+    Navigator.push(context,
+        new MaterialPageRoute(builder: (context) => new VendasListagem()));
   }
 
   // Tela //
@@ -857,7 +951,7 @@ class _VendasCadastroState extends State<VendasCadastro> {
                     textColor: Colors.white,
                     key: null,
                     onPressed: () {
-                      //deletaProduto();
+                      deletaVenda();
                     },
                     child: Container(
                         alignment: Alignment.center,
@@ -869,8 +963,9 @@ class _VendasCadastroState extends State<VendasCadastro> {
                     key: null,
                     color: Colors.green,
                     textColor: Colors.white,
-                    onPressed: () {
+                    onPressed: () async {
                       //fazer funcao para inserir no banco
+                      await proximoCodigo();
                       insereBanco();
                     },
                     child: Container(

@@ -281,35 +281,35 @@ class _ProdutosCadastroState extends State<ProdutosCadastro> {
                     width: 1.7976931348623157e+308,
                     height: 5.0,
                   ),
-                  Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      mainAxisSize: MainAxisSize.max,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: <Widget>[
-                        RaisedButton(
-                            key: null,
-                            onPressed: () {},
-                            color: const Color(0xFFe0e0e0),
-                            child: Container(
-                                alignment: Alignment.center,
-                                width: 120,
-                                child: Text(
-                                  "Movimentação",
-                                ))),
-                        RaisedButton(
-                            key: null,
-                            onPressed: () {
-                              print("Dívidas");
-                            },
-                            color: const Color(0xFFe0e0e0),
-                            child: Container(
-                              alignment: Alignment.center,
-                              width: 120,
-                              child: Text(
-                                "Dívidas",
-                              ),
-                            ))
-                      ]),
+                  // Row(
+                  //     mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  //     mainAxisSize: MainAxisSize.max,
+                  //     crossAxisAlignment: CrossAxisAlignment.center,
+                  //     children: <Widget>[
+                  //       RaisedButton(
+                  //           key: null,
+                  //           onPressed: () {},
+                  //           color: const Color(0xFFe0e0e0),
+                  //           child: Container(
+                  //               alignment: Alignment.center,
+                  //               width: 120,
+                  //               child: Text(
+                  //                 "Movimentação",
+                  //               ))),
+                  //       RaisedButton(
+                  //           key: null,
+                  //           onPressed: () {
+                  //             print("Dívidas");
+                  //           },
+                  //           color: const Color(0xFFe0e0e0),
+                  //           child: Container(
+                  //             alignment: Alignment.center,
+                  //             width: 120,
+                  //             child: Text(
+                  //               "Dívidas",
+                  //             ),
+                  //           ))
+                  //     ]),
                   Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       mainAxisSize: MainAxisSize.max,

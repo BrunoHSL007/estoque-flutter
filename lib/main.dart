@@ -109,9 +109,9 @@ class _MyHomePageState extends State<MyHomePage> {
           "  pessoa INTEGER," +
           "  total REAL," +
           "  pago REAL," +
+          "  quantidade INTEGER," +
           "  data DATE		" +
           ");");
-      print('Iniciando banco...');
     });
 
     // INSERT
@@ -217,26 +217,26 @@ class DrawerOnly extends StatelessWidget {
                       builder: (context) => new VendasListagem()));
             },
           ),
-          ListTile(
-            title: Text('Compras'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                  context,
-                  new MaterialPageRoute(
-                      builder: (context) => new ComprasListagem()));
-            },
-          ),
-          ListTile(
-            title: Text('Dívidas'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                  context,
-                  new MaterialPageRoute(
-                      builder: (context) => new DividasListagem()));
-            },
-          ),
+          // ListTile(
+          //   title: Text('Compras'),
+          //   onTap: () {
+          //     Navigator.pop(context);
+          //     Navigator.push(
+          //         context,
+          //         new MaterialPageRoute(
+          //             builder: (context) => new ComprasListagem()));
+          //   },
+          // ),
+          // ListTile(
+          //   title: Text('Dívidas'),
+          //   onTap: () {
+          //     Navigator.pop(context);
+          //     Navigator.push(
+          //         context,
+          //         new MaterialPageRoute(
+          //             builder: (context) => new DividasListagem()));
+          //   },
+          // ),
         ],
       ),
     );

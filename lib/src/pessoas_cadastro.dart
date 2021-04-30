@@ -273,14 +273,14 @@ class _PessoasCadastroState extends State<PessoasCadastro> {
                         RaisedButton(
                             key: null,
                             onPressed: () {
-                              print("Movimentação");
+                              print("Vendas");
                             },
                             color: const Color(0xFFe0e0e0),
                             child: Container(
                                 alignment: Alignment.center,
                                 width: 120,
                                 child: Text(
-                                  "Movimentação",
+                                  "Vendas",
                                 ))),
                         RaisedButton(
                             key: null,

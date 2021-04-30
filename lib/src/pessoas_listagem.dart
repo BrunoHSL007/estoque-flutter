@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:estoque_simples/src/pessoas_cadastro.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -13,6 +14,7 @@ class PessoasListagem extends StatefulWidget {
 
 class _PessoasListagemState extends State<PessoasListagem> {
   var listaPessoas = new List<Map>();
+  List<String> listaDropdown = [];
 
   _PessoasListagemState() {
     consultaBanco();
@@ -40,6 +42,20 @@ class _PessoasListagemState extends State<PessoasListagem> {
       });
     }
     await database.close();
+
+    // Busca clientes
+    var dbPessoas = await openDatabase(path, version: 2);
+
+    var peslista = await dbPessoas.rawQuery('SELECT * from pessoas');
+    await dbPessoas.close();
+
+    for (var item in peslista) {
+      setState(() {
+        this
+            .listaDropdown
+            .add(item['codigo'].toString() + ' - ' + item['nome']);
+      });
+    }
   }
 
   @override
@@ -78,10 +94,27 @@ class _PessoasListagemState extends State<PessoasListagem> {
                           })
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.all(5.0),
-                    alignment: Alignment.center,
-                    height: 10.0,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: DropdownSearch<String>(
+                      mode: Mode.DIALOG,
+                      isFilteredOnline: true,
+                      showClearButton: true,
+                      showSearchBox: true,
+                      showSelectedItem: true,
+                      items: this.listaDropdown,
+                      label: "Pessoa",
+                      popupItemDisabled: (String s) => s.startsWith('I'),
+                      onChanged: (value) {
+                        var _codPessoa =
+                            int.parse(value.substring(0, value.indexOf(' - ')));
+                        Navigator.push(
+                            context,
+                            new MaterialPageRoute(
+                                builder: (context) =>
+                                    new PessoasCadastro(_codPessoa, true)));
+                      },
+                    ),
                   ),
                   Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -106,16 +139,16 @@ class _PessoasListagemState extends State<PessoasListagem> {
                           //width: 260.0,
                           //height: 30.0,
                         ),
-                        Container(
-                          child: Text(
-                            'Dívida',
-                            style: TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          padding: const EdgeInsets.all(0.0),
-                          alignment: Alignment.centerRight,
-                          //width: 50.0,
-                          //height: 30.0,
-                        ),
+                        // Container(
+                        //   child: Text(
+                        //     'Dívida',
+                        //     style: TextStyle(fontWeight: FontWeight.w500),
+                        //   ),
+                        //   padding: const EdgeInsets.all(0.0),
+                        //   alignment: Alignment.centerRight,
+                        //   //width: 50.0,
+                        //   //height: 30.0,
+                        // ),
                       ]),
                   ListView.builder(
                       itemCount: this.listaPessoas.length,
@@ -151,14 +184,14 @@ class _PessoasListagemState extends State<PessoasListagem> {
                                     //width: 260.0,
                                     //height: 30.0,
                                   ),
-                                  Container(
-                                    child: Text(
-                                        '${this.listaPessoas[index]['divida']}'),
-                                    padding: const EdgeInsets.all(0.0),
-                                    alignment: Alignment.centerRight,
-                                    //width: 50.0,
-                                    //height: 30.0,
-                                  ),
+                                  // Container(
+                                  //   child: Text(
+                                  //       '${this.listaPessoas[index]['divida']}'),
+                                  //   padding: const EdgeInsets.all(0.0),
+                                  //   alignment: Alignment.centerRight,
+                                  //   //width: 50.0,
+                                  //   //height: 30.0,
+                                  // ),
                                 ]));
                       })
                 ],
